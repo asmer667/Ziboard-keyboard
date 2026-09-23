@@ -23,12 +23,12 @@ jobs:
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
 
-    - name: Setup Properties and Dummy Keystore
+    - name: Setup Properties and Generate Generated Code
       run: |
-        # 1. إنشاء ملف كي ستور وهمي
+        # 1. إنشاء Keystore وهمي متوافق
         keytool -genkey -v -keystore "$GITHUB_WORKSPACE/dummy.keystore" -alias dummy -keyalg RSA -keysize 2048 -validity 10000 -storepass 123456 -keypass 123456 -dname "CN=Dummy, OU=Dummy, O=Dummy, L=Dummy, S=Dummy, C=US"
 
-        # 2. كتابة الخصائص في كل الملفات المحتملة التي يقرأها build.gradle
+        # 2. كتابة إعدادات keystore المطلوبة
         echo "KEYSTORE_FILE=$GITHUB_WORKSPACE/dummy.keystore" > keystore.properties
         echo "KEYSTORE_PASSWORD=123456" >> keystore.properties
         echo "KEY_ALIAS=dummy" >> keystore.properties
@@ -41,10 +41,14 @@ jobs:
 
         echo "disabled=true" > crashreporting.properties
 
-        # 3. تشغيل سكريبت الإعداد إذا كان موجوداً
+        # 3. تشغيل سكريبت التوليد لتفادي أخطاء Unresolved reference 'LatinIME'
         if [ -f setUpPropertiesCI.sh ]; then
           chmod +x setUpPropertiesCI.sh
-          ./setUpPropertiesCI.sh || true
+          export KEYSTORE_FILE="$GITHUB_WORKSPACE/dummy.keystore"
+          export KEYSTORE_PASSWORD="123456"
+          export KEY_ALIAS="dummy"
+          export KEY_PASSWORD="123456"
+          ./setUpPropertiesCI.sh
         fi
 
     - name: Build Debug APK
@@ -64,7 +68,6 @@ jobs:
           -PKEYSTORE_PASSWORD="123456" \
           -PKEY_ALIAS="dummy" \
           -PKEY_PASSWORD="123456" \
-          -Pkeystore.file="$GITHUB_WORKSPACE/dummy.keystore" \
           --no-daemon
 
     - name: Upload APK Artifact

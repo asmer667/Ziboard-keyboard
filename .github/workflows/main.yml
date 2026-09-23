@@ -23,12 +23,12 @@ jobs:
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
 
-    - name: Setup Properties and Generate Generated Code
+    - name: Setup Properties and Generate Code
       run: |
-        # 1. إنشاء Keystore وهمي متوافق
+        # 1. إنشاء Keystore وهمي
         keytool -genkey -v -keystore "$GITHUB_WORKSPACE/dummy.keystore" -alias dummy -keyalg RSA -keysize 2048 -validity 10000 -storepass 123456 -keypass 123456 -dname "CN=Dummy, OU=Dummy, O=Dummy, L=Dummy, S=Dummy, C=US"
 
-        # 2. تحويل ملف الكي ستور إلى نص base64 لتلبية طلب سكريبت setUpPropertiesCI.sh
+        # 2. تشفير الكي ستور إلى Base64
         DUMMY_BASE64=$(base64 -w 0 "$GITHUB_WORKSPACE/dummy.keystore")
 
         # 3. كتابة ملفات الخصائص المباشرة لـ Gradle
@@ -46,7 +46,7 @@ jobs:
 
         echo "disabled=true" > crashreporting.properties
 
-        # 4. تشغيل سكريبت التوليد مع تزويده بجميع المتغيرات المطلوبة
+        # 4. تشغيل سكريبت الإعداد وتوليد الكود المفقود
         if [ -f setUpPropertiesCI.sh ]; then
           chmod +x setUpPropertiesCI.sh
           export KEYSTORE_FILE="$DUMMY_BASE64"
@@ -54,7 +54,7 @@ jobs:
           export KEY_ALIAS="dummy"
           export KEYSTORE_ALIAS="dummy"
           export KEY_PASSWORD="123456"
-          ./setUpPropertiesCI.sh
+          ./setUpPropertiesCI.sh || true
         fi
 
     - name: Build Debug APK
@@ -67,6 +67,11 @@ jobs:
         KEY_ALIAS: "dummy"
         KEYSTORE_ALIAS: "dummy"
         KEY_PASSWORD: "123456"
+        # قيم وهمية لمنع خطأ buildConfigField null
+        CRASH_REPORTING_URL: "https://localhost"
+        CRASH_REPORTING_KEY: "dummy"
+        SENTRY_DSN: "https://dummy@localhost/1"
+        API_KEY: "dummy"
       run: |
         ./gradlew assembleDebug \
           -DVERSION_CODE=1 \
@@ -76,6 +81,10 @@ jobs:
           -PKEY_ALIAS="dummy" \
           -PKEYSTORE_ALIAS="dummy" \
           -PKEY_PASSWORD="123456" \
+          -PCRASH_REPORTING_URL="https://localhost" \
+          -PCRASH_REPORTING_KEY="dummy" \
+          -PSENTRY_DSN="https://dummy@localhost/1" \
+          -PAPI_KEY="dummy" \
           --no-daemon
 
     - name: Upload APK Artifact

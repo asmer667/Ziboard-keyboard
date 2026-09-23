@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <!-- Application name for the dev version of keyboard. "ZEBOARD" should not be translated. -->
+  <string name="english_ime_name">ZEBOARD</string>
+  <!-- Name of Android spell checker service. "ZEBOARD" should not be translated. -->
+  <string name="spell_checker_service_name">ZEBOARD rašybos tikrintuvas [eksperimentinė versija]</string>
+  <!-- Title for Android Keyboard settings screen. "ZEBOARD" should not be translated. -->
+  <string name="english_ime_settings">ZEBOARD klaviatūros nustatymai [eksperimentinė versija]</string>
+  <!-- Title for the spell checking service settings screen. "ZEBOARD" should not be translated. -->
+  <string name="android_spell_checker_settings">ZEBOARD rašybos tikrintuvo nustatymai [eksperimentinė versija]</string>
+</resources>

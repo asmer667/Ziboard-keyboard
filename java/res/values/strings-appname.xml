@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Application name for the keyboard. -->
+    <string name="english_ime_name">ZEBOARD</string>
+
+    <!-- Name of Android spell checker service. -->
+    <string name="spell_checker_service_name">ZEBOARD Spell Checker</string>
+
+    <!-- Title for Android Keyboard settings screen. -->
+    <string name="english_ime_settings">ZEBOARD Settings</string>
+
+    <!-- Title for the spell checking service settings screen. -->
+    <string name="android_spell_checker_settings">ZEBOARD Spell Checker Settings</string>
+</resources>

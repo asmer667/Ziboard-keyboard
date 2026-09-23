@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Machine translated strings, need further verification -->
+<resources>
+    <!-- Application name for the keyboard. "ZEBOARD" should not be translated. -->
+    <string name="english_ime_name">ZEBOARD</string>
+
+    <!-- Name of Android spell checker service. "ZEBOARD" should not be translated. -->
+    <string name="spell_checker_service_name">ZEBOARD स्पेल चेकर्सर्विस</string>
+
+    <!-- Title for Android Keyboard settings screen. "ZEBOARD" should not be translated. -->
+    <string name="english_ime_settings">ZEBOARD कीबोर्ड सेटिंग्स</string>
+
+    <!-- Title for the spell checking service settings screen. "ZEBOARD" should not be translated. -->
+    <string name="android_spell_checker_settings">ZEBOARD स्पेल चेकिंग सेटिंग्स</string>
+
+</resources>

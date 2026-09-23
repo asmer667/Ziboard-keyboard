@@ -1,0 +1,19 @@
+name: OpenBangla (Avro Phonetic)
+description: Bangla Unicode input using the OpenBangla / Avro Phonetic method. Type in English and get Bangla.
+languages: bn
+combiners:
+  - OpenBangla
+attributes: {shiftable: true}
+autoShift: false
+minimumFunctionalKeyWidth: 0.15
+rows:
+  - letters: q w e r t y u i o p
+  - letters: a s d f g h j k l
+  - letters: z x c v b n m
+  - bottom:
+    - $shift
+    - $symbols
+    - $action
+    - $space
+    - $enter
+    - $delete

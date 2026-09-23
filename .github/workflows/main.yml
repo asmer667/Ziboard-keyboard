@@ -23,9 +23,17 @@ jobs:
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
 
+    - name: Create Dummy Keystore File
+      run: |
+        touch dummy.keystore
+        echo "KEYSTORE_FILE=dummy.keystore" >> keystore.properties
+        echo "KEYSTORE_PASSWORD=dummy" >> keystore.properties
+        echo "KEY_ALIAS=dummy" >> keystore.properties
+        echo "KEY_PASSWORD=dummy" >> keystore.properties
+
     - name: Run Build Properties Setup
       env:
-        KEYSTORE_FILE: "dummy"
+        KEYSTORE_FILE: "dummy.keystore"
         KEYSTORE_PASSWORD: "dummy"
         KEY_ALIAS: "dummy"
         KEY_PASSWORD: "dummy"

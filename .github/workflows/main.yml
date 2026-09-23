@@ -23,27 +23,25 @@ jobs:
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
 
-    - name: Generate Dummy Keystore and Properties
+    - name: Setup Properties and Dummy Keystore
       run: |
-        # إنشاء ملف كي ستور وهمي حقيقي باستخدام keytool
-        keytool -genkey -v -keystore dummy.keystore -alias dummy -keyalg RSA -keysize 2048 -validity 10000 -storepass 123456 -keypass 123456 -dname "CN=Dummy, OU=Dummy, O=Dummy, L=Dummy, S=Dummy, C=US"
-        
-        # إنشاء ملفات الخصائص المطلوبة لـ Gradle
+        # 1. إنشاء ملف كي ستور وهمي
+        keytool -genkey -v -keystore "$GITHUB_WORKSPACE/dummy.keystore" -alias dummy -keyalg RSA -keysize 2048 -validity 10000 -storepass 123456 -keypass 123456 -dname "CN=Dummy, OU=Dummy, O=Dummy, L=Dummy, S=Dummy, C=US"
+
+        # 2. كتابة الخصائص في كل الملفات المحتملة التي يقرأها build.gradle
         echo "KEYSTORE_FILE=$GITHUB_WORKSPACE/dummy.keystore" > keystore.properties
         echo "KEYSTORE_PASSWORD=123456" >> keystore.properties
         echo "KEY_ALIAS=dummy" >> keystore.properties
         echo "KEY_PASSWORD=123456" >> keystore.properties
-        
-        # إنشاء ملف crashreporting لمنع تحذير الغياب
+
+        echo "KEYSTORE_FILE=$GITHUB_WORKSPACE/dummy.keystore" >> local.properties
+        echo "KEYSTORE_PASSWORD=123456" >> local.properties
+        echo "KEY_ALIAS=dummy" >> local.properties
+        echo "KEY_PASSWORD=123456" >> local.properties
+
         echo "disabled=true" > crashreporting.properties
 
-    - name: Run Build Properties Setup
-      env:
-        KEYSTORE_FILE: "${{ github.workspace }}/dummy.keystore"
-        KEYSTORE_PASSWORD: "123456"
-        KEY_ALIAS: "dummy"
-        KEY_PASSWORD: "123456"
-      run: |
+        # 3. تشغيل سكريبت الإعداد إذا كان موجوداً
         if [ -f setUpPropertiesCI.sh ]; then
           chmod +x setUpPropertiesCI.sh
           ./setUpPropertiesCI.sh || true
@@ -54,7 +52,20 @@ jobs:
         VERSION_CODE: 1
         VERSION_NAME: "1.0.0"
         BRANCH_NAME: "main"
-      run: ./gradlew assembleDebug -DVERSION_CODE=1 -DVERSION_NAME=1.0.0 --no-daemon
+        KEYSTORE_FILE: "${{ github.workspace }}/dummy.keystore"
+        KEYSTORE_PASSWORD: "123456"
+        KEY_ALIAS: "dummy"
+        KEY_PASSWORD: "123456"
+      run: |
+        ./gradlew assembleDebug \
+          -DVERSION_CODE=1 \
+          -DVERSION_NAME=1.0.0 \
+          -PKEYSTORE_FILE="$GITHUB_WORKSPACE/dummy.keystore" \
+          -PKEYSTORE_PASSWORD="123456" \
+          -PKEY_ALIAS="dummy" \
+          -PKEY_PASSWORD="123456" \
+          -Pkeystore.file="$GITHUB_WORKSPACE/dummy.keystore" \
+          --no-daemon
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4

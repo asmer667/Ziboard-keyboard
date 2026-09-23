@@ -26,6 +26,15 @@ jobs:
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
 
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.x'
+
+    - name: Generate Required Code Files
+      run: |
+        python3 generate_code.py || true
+
     - name: Build Debug APK
       env:
         VERSION_CODE: "1"
@@ -40,6 +49,7 @@ jobs:
           -PKEY_ALIAS="dummy" \
           -PKEY_PASSWORD="123456" \
           --stacktrace \
+          --console=plain \
           --no-daemon
 
     - name: Upload APK Artifact

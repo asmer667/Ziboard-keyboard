@@ -31,24 +31,23 @@ jobs:
         # 2. تحويل Keystore إلى Base64
         DUMMY_BASE64=$(base64 -w 0 "$GITHUB_WORKSPACE/dummy.keystore")
 
-        # 3. حقن جميع المتغيرات الممكنة مباشرة في gradle.properties و local.properties
-        cat <<EOF >> gradle.properties
-        KEYSTORE_FILE=$GITHUB_WORKSPACE/dummy.keystore
-        KEYSTORE_PASSWORD=123456
-        KEY_ALIAS=dummy
-        KEYSTORE_ALIAS=dummy
-        KEY_PASSWORD=123456
-        CRASH_REPORTING_URL="https://localhost"
-        CRASH_REPORTING_KEY="dummy"
-        SENTRY_DSN="https://dummy@localhost/1"
-        API_KEY="dummy"
-        BUILD_CONFIG_FIELD_VALUE="dummy"
-        EOF
+        # 3. إدراج سطر جديد أولاً ثم إضافة الخواص لضمان عدم الدمج مع السطور السابقة
+        echo "" >> gradle.properties
+        echo "KEYSTORE_FILE=$GITHUB_WORKSPACE/dummy.keystore" >> gradle.properties
+        echo "KEYSTORE_PASSWORD=123456" >> gradle.properties
+        echo "KEY_ALIAS=dummy" >> gradle.properties
+        echo "KEYSTORE_ALIAS=dummy" >> gradle.properties
+        echo "KEY_PASSWORD=123456" >> gradle.properties
+        echo "CRASH_REPORTING_URL=https://localhost" >> gradle.properties
+        echo "CRASH_REPORTING_KEY=dummy" >> gradle.properties
+        echo "SENTRY_DSN=https://dummy@localhost/1" >> gradle.properties
+        echo "API_KEY=dummy" >> gradle.properties
 
+        # 4. تجهيز ملفات local و crashreporting
         cp gradle.properties local.properties
         echo "disabled=true" > crashreporting.properties
 
-        # 4. تشغيل سكريبت الإعداد
+        # 5. تشغيل سكريبت الإعداد
         if [ -f setUpPropertiesCI.sh ]; then
           chmod +x setUpPropertiesCI.sh
           export KEYSTORE_FILE="$DUMMY_BASE64"

@@ -48,8 +48,7 @@ jobs:
           -PKEYSTORE_PASSWORD="123456" \
           -PKEY_ALIAS="dummy" \
           -PKEY_PASSWORD="123456" \
-          --stacktrace \
-          --console=plain \
+          --info \
           --no-daemon
 
     - name: Upload APK Artifact

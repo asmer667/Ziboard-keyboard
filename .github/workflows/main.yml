@@ -23,20 +23,26 @@ jobs:
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
 
-    - name: Create Dummy Keystore File
+    - name: Generate Dummy Keystore and Properties
       run: |
-        touch dummy.keystore
-        echo "KEYSTORE_FILE=dummy.keystore" >> keystore.properties
-        echo "KEYSTORE_PASSWORD=dummy" >> keystore.properties
+        # إنشاء ملف كي ستور وهمي حقيقي باستخدام keytool
+        keytool -genkey -v -keystore dummy.keystore -alias dummy -keyalg RSA -keysize 2048 -validity 10000 -storepass 123456 -keypass 123456 -dname "CN=Dummy, OU=Dummy, O=Dummy, L=Dummy, S=Dummy, C=US"
+        
+        # إنشاء ملفات الخصائص المطلوبة لـ Gradle
+        echo "KEYSTORE_FILE=$GITHUB_WORKSPACE/dummy.keystore" > keystore.properties
+        echo "KEYSTORE_PASSWORD=123456" >> keystore.properties
         echo "KEY_ALIAS=dummy" >> keystore.properties
-        echo "KEY_PASSWORD=dummy" >> keystore.properties
+        echo "KEY_PASSWORD=123456" >> keystore.properties
+        
+        # إنشاء ملف crashreporting لمنع تحذير الغياب
+        echo "disabled=true" > crashreporting.properties
 
     - name: Run Build Properties Setup
       env:
-        KEYSTORE_FILE: "dummy.keystore"
-        KEYSTORE_PASSWORD: "dummy"
+        KEYSTORE_FILE: "${{ github.workspace }}/dummy.keystore"
+        KEYSTORE_PASSWORD: "123456"
         KEY_ALIAS: "dummy"
-        KEY_PASSWORD: "dummy"
+        KEY_PASSWORD: "123456"
       run: |
         if [ -f setUpPropertiesCI.sh ]; then
           chmod +x setUpPropertiesCI.sh

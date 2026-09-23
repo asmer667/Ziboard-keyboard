@@ -17,23 +17,15 @@ jobs:
       with:
         java-version: '17'
         distribution: 'temurin'
-        cache: gradle
 
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
 
-    - name: Set up Properties
-      run: |
-        if [ -f setUpPropertiesCI.sh ]; then
-          chmod +x setUpPropertiesCI.sh
-          ./setUpPropertiesCI.sh
-        fi
+    - name: Build Debug APK
+      run: ./gradlew assembleDebug --no-daemon
 
-    - name: Build APK with Gradle
-      run: ./gradlew assembleDebug -DVERSION_CODE=1 -DVERSION_NAME=1.0.0 --no-daemon
-
-    - name: Upload APK
+    - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
       with:
         name: ZEBOARD-APK
-        path: java/build/outputs/apk/debug/*.apk
+        path: '**/build/outputs/apk/debug/*.apk'

@@ -73,6 +73,10 @@ jobs:
         acraPassword=""\"\"""
         EOF
 
+    - name: Pre-generate Sources and Resources
+      run: |
+        ./gradlew updateLocales updateContributors updateBundleResources --no-daemon || true
+
     - name: Build Debug APK
       env:
         VERSION_CODE: "1"
@@ -86,7 +90,7 @@ jobs:
           -PKEYSTORE_PASSWORD="123456" \
           -PKEY_ALIAS="dummy" \
           -PKEY_PASSWORD="123456" \
-          --stacktrace \
+          --full-stacktrace \
           --no-daemon
 
     - name: Upload APK Artifact

@@ -28,25 +28,31 @@ jobs:
         # 1. إنشاء Keystore وهمي متوافق
         keytool -genkey -v -keystore "$GITHUB_WORKSPACE/dummy.keystore" -alias dummy -keyalg RSA -keysize 2048 -validity 10000 -storepass 123456 -keypass 123456 -dname "CN=Dummy, OU=Dummy, O=Dummy, L=Dummy, S=Dummy, C=US"
 
-        # 2. كتابة إعدادات keystore المطلوبة
+        # 2. تحويل ملف الكي ستور إلى نص base64 لتلبية طلب سكريبت setUpPropertiesCI.sh
+        DUMMY_BASE64=$(base64 -w 0 "$GITHUB_WORKSPACE/dummy.keystore")
+
+        # 3. كتابة ملفات الخصائص المباشرة لـ Gradle
         echo "KEYSTORE_FILE=$GITHUB_WORKSPACE/dummy.keystore" > keystore.properties
         echo "KEYSTORE_PASSWORD=123456" >> keystore.properties
         echo "KEY_ALIAS=dummy" >> keystore.properties
+        echo "KEYSTORE_ALIAS=dummy" >> keystore.properties
         echo "KEY_PASSWORD=123456" >> keystore.properties
 
         echo "KEYSTORE_FILE=$GITHUB_WORKSPACE/dummy.keystore" >> local.properties
         echo "KEYSTORE_PASSWORD=123456" >> local.properties
         echo "KEY_ALIAS=dummy" >> local.properties
+        echo "KEYSTORE_ALIAS=dummy" >> local.properties
         echo "KEY_PASSWORD=123456" >> local.properties
 
         echo "disabled=true" > crashreporting.properties
 
-        # 3. تشغيل سكريبت التوليد لتفادي أخطاء Unresolved reference 'LatinIME'
+        # 4. تشغيل سكريبت التوليد مع تزويده بجميع المتغيرات المطلوبة
         if [ -f setUpPropertiesCI.sh ]; then
           chmod +x setUpPropertiesCI.sh
-          export KEYSTORE_FILE="$GITHUB_WORKSPACE/dummy.keystore"
+          export KEYSTORE_FILE="$DUMMY_BASE64"
           export KEYSTORE_PASSWORD="123456"
           export KEY_ALIAS="dummy"
+          export KEYSTORE_ALIAS="dummy"
           export KEY_PASSWORD="123456"
           ./setUpPropertiesCI.sh
         fi
@@ -59,6 +65,7 @@ jobs:
         KEYSTORE_FILE: "${{ github.workspace }}/dummy.keystore"
         KEYSTORE_PASSWORD: "123456"
         KEY_ALIAS: "dummy"
+        KEYSTORE_ALIAS: "dummy"
         KEY_PASSWORD: "123456"
       run: |
         ./gradlew assembleDebug \
@@ -67,6 +74,7 @@ jobs:
           -PKEYSTORE_FILE="$GITHUB_WORKSPACE/dummy.keystore" \
           -PKEYSTORE_PASSWORD="123456" \
           -PKEY_ALIAS="dummy" \
+          -PKEYSTORE_ALIAS="dummy" \
           -PKEY_PASSWORD="123456" \
           --no-daemon
 

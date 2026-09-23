@@ -25,29 +25,24 @@ jobs:
 
     - name: Setup Dummy Properties and Environment
       run: |
-        # 1. إنشاء Keystore وهمي
+        # 1. إزالة ملف crashreporting.properties إن وجد لتفعيل الوضع الآمن الاحتياطي (else)
+        rm -f crashreporting.properties
+
+        # 2. إنشاء Keystore وهمي
         keytool -genkey -v -keystore "$GITHUB_WORKSPACE/dummy.keystore" -alias dummy -keyalg RSA -keysize 2048 -validity 10000 -storepass 123456 -keypass 123456 -dname "CN=Dummy, OU=Dummy, O=Dummy, L=Dummy, S=Dummy, C=US"
 
-        # 2. تحويل Keystore إلى Base64
+        # 3. تحويل Keystore إلى Base64
         DUMMY_BASE64=$(base64 -w 0 "$GITHUB_WORKSPACE/dummy.keystore")
 
-        # 3. إعداد crashreporting.properties بجميع الخواص المطلوبة للـ BuildConfig
-        cat <<EOF > crashreporting.properties
-        acraEnabled=false
-        acraUrl=""
-        acraUser=""
-        acraPassword=""
-        EOF
-
-        # 4. إعداد keystore.properties
+        # 4. إعداد keystore.properties بالشكل الذي يتوقعه build.gradle بالضبط
         cat <<EOF > keystore.properties
         keyAlias=dummy
         keyPassword=123456
-        storeFile=$GITHUB_WORKSPACE/dummy.keystore
+        storeFile=dummy.keystore
         storePassword=123456
         EOF
 
-        # 5. ضبط gradle.properties و local.properties
+        # 5. إعداد gradle.properties و local.properties
         echo "" >> gradle.properties
         echo "KEYSTORE_FILE=$GITHUB_WORKSPACE/dummy.keystore" >> gradle.properties
         echo "KEYSTORE_PASSWORD=123456" >> gradle.properties
@@ -57,7 +52,7 @@ jobs:
 
         cp gradle.properties local.properties
 
-        # 6. تشغيل سكريبت الإعداد
+        # 6. تشغيل سكريبت الإعداد وتوليد الكود المفقود
         if [ -f setUpPropertiesCI.sh ]; then
           chmod +x setUpPropertiesCI.sh
           export KEYSTORE_FILE="$DUMMY_BASE64"

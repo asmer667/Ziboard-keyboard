@@ -56,7 +56,6 @@ open class KeyboardResizeHelper(
             } - delta.bottom.toDp()
 
             if (newBottomPadding !in 0.dp..maximumBottomPadding) {
-                // Correct for height difference if it's being dragged up/down
                 val correction = if (newBottomPadding < 0.dp) {
                     newBottomPadding.toPx().coerceAtLeast(-delta.top)
                 } else {
@@ -100,7 +99,7 @@ open class KeyboardResizeHelper(
                 oneHandedHeightAdditionDp = editedSettings.oneHandedHeightAdditionDp + heightAdditionDiffDp.value,
                 oneHandedRectDp = editedSettings.oneHandedRectDp.copy(bottom = bottomPadding)
             )
-            KeyboardMode.Floating -> editedSettings // unused by Floating
+            KeyboardMode.Floating -> editedSettings
         }
     }
 
@@ -131,8 +130,8 @@ open class KeyboardResizeHelper(
                     right = newSidePadding
                 )
             )
-            KeyboardMode.OneHanded -> editedSettings // unused by OneHanded
-            KeyboardMode.Floating -> editedSettings // unused by Floating
+            KeyboardMode.OneHanded -> editedSettings
+            KeyboardMode.Floating -> editedSettings
         }
     }
 }
@@ -144,9 +143,6 @@ class OneHandedKeyboardResizeHelper(
     initialSettings: SavedKeyboardSizingSettings,
     delta: DragDelta
 ) : KeyboardResizeHelper(viewSize, computedKeyboardSize, density, initialSettings, delta) {
-
-    // These have to be flipped in right handed mode, because the setting values are relative to
-    // left-handed mode.
 
     val deltaLeft = if(computedKeyboardSize.direction == OneHandedDirection.Left) {
         delta.left
@@ -160,17 +156,14 @@ class OneHandedKeyboardResizeHelper(
         -delta.left
     }
 
-
     fun moveSideToSide() = with(density) {
         var rightCorrection = 0.dp
         var newLeft = editedSettings.oneHandedRectDp.left + deltaLeft.toDp()
         if(newLeft < 0.dp) {
-            // prevent shrinking when being dragged into the wall
             if(deltaRight < 0.0f) {
                 rightCorrection -= newLeft
             }
             newLeft = 0.dp
-
             result = false
         }
 
@@ -223,7 +216,6 @@ class FloatingKeyboardResizeHelper(
     initialSettings: SavedKeyboardSizingSettings,
     delta: DragDelta
 ) : KeyboardResizeHelper(viewSize, computedKeyboardSize, density, initialSettings, delta) {
-    // Matching the necessary coordinate space
     var deltaX = delta.left
     var deltaY = -delta.bottom
     var deltaWidth = delta.right - delta.left
@@ -319,7 +311,7 @@ class KeyboardResizers(val latinIME: LatinIME) {
 
             latinIME.sizingCalculator.editSavedSettings { settings ->
                 val helper = FloatingKeyboardResizeHelper(
-                    IntSize(latinIME.getViewWidth(), latinIME.getViewHeight()),
+                    IntSize(latinIME.viewWidth, latinIME.viewHeight),
                     latinIME.size.value as? FloatingKeyboardSize ?: size,
                     this,
                     settings,
@@ -349,7 +341,7 @@ class KeyboardResizers(val latinIME: LatinIME) {
 
             latinIME.sizingCalculator.editSavedSettings { settings ->
                 val helper = KeyboardResizeHelper(
-                    IntSize(latinIME.getViewWidth(), latinIME.getViewHeight()),
+                    IntSize(latinIME.viewWidth, latinIME.viewHeight),
                     latinIME.size.value ?: size,
                     this, settings, delta
                 )
@@ -376,7 +368,7 @@ class KeyboardResizers(val latinIME: LatinIME) {
 
             latinIME.sizingCalculator.editSavedSettings { settings ->
                 val helper = OneHandedKeyboardResizeHelper(
-                    IntSize(latinIME.getViewWidth(), latinIME.getViewHeight()),
+                    IntSize(latinIME.viewWidth, latinIME.viewHeight),
                     latinIME.size.value as? OneHandedKeyboardSize ?: size,
                     this, settings, delta
                 )
@@ -410,7 +402,7 @@ class KeyboardResizers(val latinIME: LatinIME) {
 
                 latinIME.sizingCalculator.editSavedSettings { settings ->
                     val helper = SplitKeyboardResizeHelper(
-                        IntSize(latinIME.getViewWidth(), latinIME.getViewHeight()),
+                        IntSize(latinIME.viewWidth, latinIME.viewHeight),
                         latinIME.size.value as? SplitKeyboardSize ?: size,
                         this@with, settings, delta
                     )
@@ -432,8 +424,6 @@ class KeyboardResizers(val latinIME: LatinIME) {
             }, shape)
         }
     }
-
-
 
     @Composable
     fun Resizer(boxScope: BoxScope, size: ComputedKeyboardSize, shape: RoundedCornerShape = RoundedCornerShape(4.dp)) = with(boxScope) {

@@ -2,14 +2,9 @@ package org.futo.inputmethod.v2keyboard
 
 import android.content.Context
 import android.graphics.Rect
-import android.os.Build
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.width
 import androidx.datastore.preferences.core.floatPreferencesKey
-import androidx.datastore.preferences.core.stringPreferencesKey
-import androidx.window.layout.FoldingFeature
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.SerialDescriptor
@@ -22,21 +17,16 @@ import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.encoding.decodeStructure
 import kotlinx.serialization.encoding.encodeStructure
 import kotlinx.serialization.json.Json
-import org.futo.inputmethod.latin.FoldStateProvider
 import org.futo.inputmethod.latin.LatinIME
-import org.futo.inputmethod.latin.settings.SettingsValues
-import org.futo.inputmethod.latin.uix.OldStyleActionsBar
 import org.futo.inputmethod.latin.uix.SettingsKey
-import org.futo.inputmethod.latin.uix.UixManager
-import org.futo.inputmethod.latin.uix.getSetting
 import org.futo.inputmethod.latin.uix.getSettingBlocking
-import org.futo.inputmethod.latin.uix.setSettingBlocking
-import org.futo.inputmethod.latin.utils.ResourceUtils
 import kotlin.math.roundToInt
 
+// --- الإعدادات ---
 val OldKeyboardHeightMultiplierSetting = SettingsKey(floatPreferencesKey("keyboardHeightMultiplier"), 1.0f)
 val OldKeyboardBottomOffsetSetting = SettingsKey(floatPreferencesKey("keyboardOffset"), 0.0f)
 
+// --- واجهات وبيانات الحجم ---
 interface KeyboardSizeStateProvider {
     val currentSizeState: KeyboardSizeSettingKind
 }
@@ -108,6 +98,7 @@ enum class KeyboardMode {
     Floating
 }
 
+// --- Serialization ---
 object DpRectSerializer : KSerializer<DpRect> {
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor("DpRect") {
         element<Float>("left")
@@ -188,6 +179,7 @@ data class SavedKeyboardSizingSettings(
 
 private fun Float.guardNaN(fallback: Float): Float = if (this.isNaN()) fallback else this
 
+// --- Default Settings ---
 fun getDefaultSettingForKind(kind: KeyboardSizeSettingKind, context: Context): SavedKeyboardSizingSettings {
     val oldBottomOffset = context.getSettingBlocking(OldKeyboardBottomOffsetSetting).dp
 

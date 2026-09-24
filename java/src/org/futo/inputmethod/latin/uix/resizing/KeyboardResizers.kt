@@ -56,6 +56,7 @@ open class KeyboardResizeHelper(
             } - delta.bottom.toDp()
 
             if (newBottomPadding !in 0.dp..maximumBottomPadding) {
+                // Correct for height difference if it's being dragged up/down
                 val correction = if (newBottomPadding < 0.dp) {
                     newBottomPadding.toPx().coerceAtLeast(-delta.top)
                 } else {
@@ -99,7 +100,7 @@ open class KeyboardResizeHelper(
                 oneHandedHeightAdditionDp = editedSettings.oneHandedHeightAdditionDp + heightAdditionDiffDp.value,
                 oneHandedRectDp = editedSettings.oneHandedRectDp.copy(bottom = bottomPadding)
             )
-            KeyboardMode.Floating -> editedSettings
+            KeyboardMode.Floating -> editedSettings // unused by Floating
         }
     }
 
@@ -130,8 +131,8 @@ open class KeyboardResizeHelper(
                     right = newSidePadding
                 )
             )
-            KeyboardMode.OneHanded -> editedSettings
-            KeyboardMode.Floating -> editedSettings
+            KeyboardMode.OneHanded -> editedSettings // unused by OneHanded
+            KeyboardMode.Floating -> editedSettings // unused by Floating
         }
     }
 }
@@ -143,6 +144,9 @@ class OneHandedKeyboardResizeHelper(
     initialSettings: SavedKeyboardSizingSettings,
     delta: DragDelta
 ) : KeyboardResizeHelper(viewSize, computedKeyboardSize, density, initialSettings, delta) {
+
+    // These have to be flipped in right handed mode, because the setting values are relative to
+    // left-handed mode.
 
     val deltaLeft = if(computedKeyboardSize.direction == OneHandedDirection.Left) {
         delta.left
@@ -156,14 +160,17 @@ class OneHandedKeyboardResizeHelper(
         -delta.left
     }
 
+
     fun moveSideToSide() = with(density) {
         var rightCorrection = 0.dp
         var newLeft = editedSettings.oneHandedRectDp.left + deltaLeft.toDp()
         if(newLeft < 0.dp) {
+            // prevent shrinking when being dragged into the wall
             if(deltaRight < 0.0f) {
                 rightCorrection -= newLeft
             }
             newLeft = 0.dp
+
             result = false
         }
 
@@ -216,6 +223,7 @@ class FloatingKeyboardResizeHelper(
     initialSettings: SavedKeyboardSizingSettings,
     delta: DragDelta
 ) : KeyboardResizeHelper(viewSize, computedKeyboardSize, density, initialSettings, delta) {
+    // Matching the necessary coordinate space
     var deltaX = delta.left
     var deltaY = -delta.bottom
     var deltaWidth = delta.right - delta.left
@@ -248,210 +256,4 @@ class FloatingKeyboardResizeHelper(
 
     fun applyDeltaSizeWithLimits() = with(density) {
         var newWidth = editedSettings.floatingWidthDp.dp + deltaWidth.toDp()
-        var newHeight = editedSettings.floatingHeightDp.dp + deltaHeight.toDp()
-
-        val widthRange = minimumKeyboardWidth .. maximumKeyboardWidth
-        val heightRange = minimumKeyboardHeight .. maximumKeyboardHeight
-
-        if(newWidth !in widthRange) {
-            deltaX = 0.0f
-            newWidth = newWidth.coerceIn(widthRange)
-            result = false
-        }
-
-        if(newHeight !in heightRange) {
-            deltaY = 0.0f
-            newHeight = newHeight.coerceIn(heightRange)
-            result = false
-        }
-
-        editedSettings = editedSettings.copy(
-            floatingWidthDp = newWidth.value,
-            floatingHeightDp = newHeight.value
-        )
-    }
-}
-
-class SplitKeyboardResizeHelper(
-    viewSize: IntSize,
-    computedKeyboardSize: SplitKeyboardSize,
-    density: Density,
-    initialSettings: SavedKeyboardSizingSettings,
-    delta: DragDelta
-) : KeyboardResizeHelper(viewSize, computedKeyboardSize, density, initialSettings, delta) {
-    fun editSplitLayoutWidth(delta: Float) {
-        val oldSplitWidth = (computedKeyboardSize as SplitKeyboardSize).splitLayoutWidth
-        val newSplitWidth = oldSplitWidth + 2*delta
-
-        var newFraction = editedSettings.splitWidthFraction * (newSplitWidth / oldSplitWidth)
-
-        val fractionRange = 0.1f .. 0.9f
-        if(newFraction !in fractionRange) {
-            newFraction = newFraction.coerceIn(fractionRange)
-            result = false
-        }
-
-        editedSettings = editedSettings.copy(
-            splitWidthFraction = newFraction
-        )
-    }
-}
-
-class KeyboardResizers(val latinIME: LatinIME) {
-    private val resizing = mutableStateOf(false)
-
-    private fun finishResizer() {
-        resizing.value = false
-    }
-
-    @Composable
-    private fun BoxScope.FloatingKeyboardResizer(size: FloatingKeyboardSize, shape: RoundedCornerShape) = with(LocalDensity.current) {
-        ResizerRect({ delta ->
-            var result = true
-
-            latinIME.sizingCalculator.editSavedSettings { settings ->
-                val helper = FloatingKeyboardResizeHelper(
-                    IntSize(latinIME.viewWidth, latinIME.viewHeight),
-                    latinIME.size.value as? FloatingKeyboardSize ?: size,
-                    this,
-                    settings,
-                    delta
-                )
-
-                helper.applyDeltaSizeWithLimits()
-                helper.applyOriginOffsetWithLimits()
-
-                result = result && helper.result
-
-                helper.editedSettings
-            }
-
-            result
-        }, true, {
-            finishResizer()
-        }, {
-            latinIME.sizingCalculator.resetCurrentMode()
-        }, shape)
-    }
-
-    @Composable
-    private fun BoxScope.RegularKeyboardResizer(size: RegularKeyboardSize, shape: RoundedCornerShape) = with(LocalDensity.current) {
-        ResizerRect({ delta ->
-            var result = true
-
-            latinIME.sizingCalculator.editSavedSettings { settings ->
-                val helper = KeyboardResizeHelper(
-                    IntSize(latinIME.viewWidth, latinIME.viewHeight),
-                    latinIME.size.value ?: size,
-                    this, settings, delta
-                )
-
-                helper.editBottomPaddingAndHeightAddition()
-                helper.applySymmetricalPaddingForRegular(delta.left - delta.right)
-
-                result = result && helper.result
-
-                helper.editedSettings
-            }
-            result
-        }, true, {
-            finishResizer()
-        }, {
-            latinIME.sizingCalculator.resetCurrentMode()
-        }, shape)
-    }
-
-    @Composable
-    private fun BoxScope.OneHandedResizer(size: OneHandedKeyboardSize, shape: RoundedCornerShape) = with(LocalDensity.current) {
-        ResizerRect({ delta ->
-            var result = true
-
-            latinIME.sizingCalculator.editSavedSettings { settings ->
-                val helper = OneHandedKeyboardResizeHelper(
-                    IntSize(latinIME.viewWidth, latinIME.viewHeight),
-                    latinIME.size.value as? OneHandedKeyboardSize ?: size,
-                    this, settings, delta
-                )
-
-                helper.editBottomPaddingAndHeightAddition()
-                helper.moveSideToSide()
-                helper.limitToCorrectSide()
-                helper.limitMinimumWidth()
-
-                result = result && helper.result
-
-                helper.editedSettings
-            }
-            result
-        }, true, {
-            finishResizer()
-        }, {
-            latinIME.sizingCalculator.resetCurrentMode()
-        }, shape)
-    }
-
-    @Composable
-    private fun BoxScope.SplitKeyboardResizer(size: SplitKeyboardSize, shape: RoundedCornerShape) = with(LocalDensity.current) {
-        println("Active size: ${size.width} ${size.splitLayoutWidth} ${size.padding}")
-        Box(
-            modifier = Modifier.matchParentSize()
-                .absolutePadding(right = (size.width - size.splitLayoutWidth * 0.55f - size.padding.right - size.padding.left).toDp().coerceAtLeast(0.dp))
-        ) {
-            ResizerRect({ delta ->
-                var result = true
-
-                latinIME.sizingCalculator.editSavedSettings { settings ->
-                    val helper = SplitKeyboardResizeHelper(
-                        IntSize(latinIME.viewWidth, latinIME.viewHeight),
-                        latinIME.size.value as? SplitKeyboardSize ?: size,
-                        this@with, settings, delta
-                    )
-
-                    helper.editBottomPaddingAndHeightAddition()
-                    helper.applySymmetricalPaddingForRegular(delta.left)
-                    helper.editSplitLayoutWidth(delta.right - delta.left)
-
-                    result = result && helper.result
-
-                    helper.editedSettings
-                }
-
-                result
-            }, true, {
-                finishResizer()
-            }, {
-                latinIME.sizingCalculator.resetCurrentMode()
-            }, shape)
-        }
-    }
-
-    @Composable
-    fun Resizer(boxScope: BoxScope, size: ComputedKeyboardSize, shape: RoundedCornerShape = RoundedCornerShape(4.dp)) = with(boxScope) {
-        if (!resizing.value) return
-
-        val modifier = Modifier.matchParentSize().let { mod ->
-            if (size is FloatingKeyboardSize) mod
-            else mod
-                .safeKeyboardPadding()
-                .keyboardBottomPadding(size)
-                .absolutePadding(bottom = navBarHeight())
-        }
-
-        Box(modifier) {
-            when (size) {
-                is OneHandedKeyboardSize -> OneHandedResizer(size, shape)
-                is RegularKeyboardSize -> RegularKeyboardResizer(size, shape)
-                is SplitKeyboardSize -> SplitKeyboardResizer(size, shape)
-                is FloatingKeyboardSize -> FloatingKeyboardResizer(size, shape)
-            }
-        }
-    }
-
-    fun displayResizer() {
-        resizing.value = true
-    }
-
-    fun hideResizer() {
-        if(resizing.value) finishResizer()
-    }
-}
+        var newHeight = editedSettings.flo
